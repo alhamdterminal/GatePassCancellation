@@ -1,0 +1,210 @@
+﻿@using System.Data
+@{
+    ViewData["Title"] = "Gate Pass Management";
+    var table1 = ViewBag.Table1 as System.Data.DataTable;
+    var IsDeleted = true;
+    @if (table1 != null)
+    {
+        DataRow row = table1.Rows[0];
+
+        IsDeleted = Convert.ToBoolean(row["IsDeleted"]);
+    }
+}
+
+<div class="container my-4">
+    <!-- Gate Pass Form -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Gate Pass Lookup</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Index2" asp-controller="Home">
+                <div class="row mb-3">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-2">
+                        <label for="gatepassnumber" class="form-label">
+                            Enter Gate Pass Number:
+                        </label>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="gatepassnumber" name="gatepassnumber" class="form-control" placeholder="Enter gate pass number" required />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Fetch</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <hr />
+
+    <!-- Reason Selection Dropdown -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+
+            @if (IsDeleted)
+            {
+                <label for="reasonDropdown" class="form-label"> <strong> Select Reason for Revert </strong></label>
+                <select id="reasonDropdown" class="form-control dropdown">
+                    <option value="0" selected disabled>Please Select Reason</option>
+                    <option value="Deleted By Mistake">Deleted By Mistake </option>
+                </select>
+            }
+            else
+            {
+                <label for="reasonDropdown" class="form-label">
+                    <strong>
+                        Select Reason for Cancellation
+                    </strong>
+
+                </label>
+                <select id="reasonDropdown" class="form-control dropdown">
+                    <option value="0" selected disabled>Please Select Reason</option>
+                    <option value="G.D Blocked By Custom">G.D Blocked By Custom </option>
+                    <option value="Clearning Agent own Reason - Routes in City Blocked">Clearning Agent own Reason - Routes in City Blocked</option>
+                    <option value="Clearning Agent own Reason - Showroom closed">Clearning Agent own Reason - Showroom closed</option>
+                    <option value="Car carrier not available">Car carrier not available</option>
+                    <option value="Driver not available to shift vehicle to showroom">Driver not available to shift vehicle to showroom</option>
+                    <option value="TP Seal and other documents are not complete">TP Seal and other documents are not complete</option>
+                </select>
+            }
+        </div>
+    </div>
+
+    <!-- Table 1 -->
+    @if (table1 != null && table1.Rows.Count > 0)
+    {
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Gate Pass Data</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+
+                                <th>Gate Pass Number</th>
+                                <th>Vir Number</th>
+                                <th>Index No</th>
+                                <th>Gate Pass Container Number</th>
+                                <th>BL Number</th>
+                                <th>Remarks</th>
+                                <th>Gate Pass Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (System.Data.DataRow item in table1.Rows)
+                            {
+                                <tr>
+                                    <td>@item["GatePassNumber"]</td>
+                                    <td>@item["VirNumber"]</td>
+                                    <td>@item["IndexNo"]</td>
+                                    <td>@item["GatePasscontainerNumber"]</td>
+                                    <td>@item["BLNO"]</td>
+                                    <td>@item["Remarks"]</td>
+                                    <td>@item["GatePassDate"]</td>
+                                    @if (!Convert.ToBoolean(item["IsDeleted"]))
+                                    {
+                                        <td>
+                                            <form method="post" asp-action="Update" asp-controller="Home" onsubmit="return validateForm(this);">
+                                                <!-- Hidden field to store GatePassNumber -->
+                                                <input type="hidden" name="GatePassNumber" value="@item["GatePassNumber"]" />
+                                                <input type="hidden" id="remarksInput" name="Remarks" value="" />
+                                                <button type="submit" class="btn btn-success">Update</button>
+                                            </form>
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td>
+                                            <form method="post" asp-action="Revert" asp-controller="Home" onsubmit="return validateForm(this);">
+                                                <!-- Hidden field to store GatePassNumber -->
+                                                <input type="hidden" name="GatePassNumber" value="@item["GatePassNumber"]" />
+                                                <input type="hidden" id="remarksInput" name="Remarks" value="" />
+                                                <button type="submit" class="btn btn-danger">Revert</button>
+                                            </form>
+                                        </td>
+
+                                    }
+
+
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-4">
+            <strong>No data found!</strong> Please check the Gate Pass Number and try again.
+        </div>
+    }
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@if (ViewBag.Message != null)
+{
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: '@ViewBag.Message'
+        });
+    </script>
+}
+<script>
+    function validateForm(form) {
+        var reasonDropdown = document.getElementById("reasonDropdown");
+        var selectedReason = reasonDropdown.value;
+
+        // If no reason is selected, show a warning
+        if (selectedReason == "0") {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Oops...',
+                text: 'Please select a reason before updating!',
+            }).then(() => {
+                // Focus on the dropdown after the SweetAlert is dismissed
+                reasonDropdown.focus();
+            });
+            return false;
+        }
+
+        // Set the selected remarks in the hidden input
+        form.querySelector('#remarksInput').value = selectedReason;
+
+        // Ask for confirmation before submitting the form
+        Swal.fire({
+            title: 'Are you sure?',
+            text: 'Do you want to update with the selected reason?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, update it!',
+            cancelButtonText: 'No, cancel!',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // If the user confirms, submit the form
+                form.submit();
+            } else {
+                // If the user cancels, do nothing
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Cancelled',
+                    text: 'Your update was cancelled.'
+                });
+            }
+        });
+
+        // Prevent the form from submitting immediately
+        return false;
+    }
+</script>
+
+
